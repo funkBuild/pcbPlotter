@@ -38,11 +38,12 @@ class GerberDecoder {
         x: 0,
         y: 0
       },
-      appertures: {},
+      apertures: {},
       mode: 'MM',
       currentAperture: 'D01',
       interpolationMode: 'linear'
     };
+    this.drawingOperations = [];
   }
 
   decode() {
@@ -53,17 +54,15 @@ class GerberDecoder {
 
   decodeLine(line) {
     let cmd;
-    let wasProcessed = false;
 
     for(let i = 0; i < commandDict.length; i++) {
-      if(commandDict[i].canProcess(line) && (cmd = commandDict[i].process(this.state, line))) {
-        this.commands.push(cmd);
-        wasProcessed = true;
+      if(commandDict[i].canProcess(line) ) {
+        this.commands.push(
+          commandDict[i].process(this, line)
+        );
         break;
-        //console.dir(this.state);
       }
     }
-    if(!wasProcessed) console.dir(`Unprocessed line :: ${line}`);
   }
 }
 
