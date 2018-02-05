@@ -9,6 +9,8 @@ const InterpolateOperation = require('./lib/interpolate_operation.js');
 const MoveOperation = require('./lib/move_operation.js');
 const FlashOperation = require('./lib/flash_operation.js');
 
+const DrawingCanvas = require('./lib/drawing_canvas');
+
 const commandDict = [
   CommentCommand,
   FormatStatementCommand,
@@ -32,11 +34,20 @@ class GerberDecoder {
 
   constructor(data) {
     this._lines = data.split('\n');
-    this.commands = [];
     this.state = {
       position: {
         x: 0,
         y: 0
+      },
+      boundingBox: {
+        topRight: {
+          x: 0,
+          y: 0
+        },
+        bottomLeft: {
+          x: 0,
+          y: 0
+        }
       },
       apertures: {},
       mode: 'MM',
@@ -46,10 +57,29 @@ class GerberDecoder {
     this.drawingOperations = [];
   }
 
+  updateBoundingBox(x, y) {
+    console.log(`x: ${x}, y: ${y}`);
+    if(x >= this.state.boundingBox.topRight.x) {
+      this.state.boundingBox.topRight.x = x;
+    }
+    if(y >= this.state.boundingBox.topRight.y) {
+      this.state.boundingBox.topRight.y = y;
+    }
+    if(x <= this.state.boundingBox.bottomLeft.x){
+      this.state.boundingBox.bottomLeft.x = x;
+    }
+    if(y <= this.state.boundingBox.bottomLeft.y) {
+      this.state.boundingBox.bottomLeft.y = y;
+    }
+  }
+
   decode() {
     this._lines.forEach( line => {
       this.decodeLine(line);
     });
+
+    console.dir(this.drawingOperations);
+    this.drawingCanvas = DrawingCanvas.create(this.state.boundingBox);
   }
 
   decodeLine(line) {
@@ -57,9 +87,7 @@ class GerberDecoder {
 
     for(let i = 0; i < commandDict.length; i++) {
       if(commandDict[i].canProcess(line) ) {
-        this.commands.push(
-          commandDict[i].process(this, line)
-        );
+        commandDict[i].process(this, line)
         break;
       }
     }
